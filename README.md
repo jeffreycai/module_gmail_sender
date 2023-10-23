@@ -14,16 +14,17 @@ The `gmail_sender` module provides a simple interface to send emails using the G
 
     ```bash
     git clone git@github.com:jeffreycai/module-gmail-sender.git
-    cd git@github.com:jeffreycai/module-gmail-sender.git
+    cp module-gmail-sender [your-project-dir]
     ```
 
 2. Install the required Python packages:
 
     ```bash
+    cd module-gmail-sender.git
     pip install -r requirements.txt
     ```
 
-3. Place the `gcp-svc-acc-key.json` service account key file in the root.
+3. Place the `gcp-svc-acc-key.json` service account key file in the module root dir.
 
 ## Usage
 
