@@ -3,6 +3,8 @@ from googleapiclient.discovery import build
 import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 import os
 
 class GmailSender:
@@ -31,7 +33,7 @@ class GmailSender:
         self.default_to_email = self.DEFAULT_TO_ADDRESS
         self.default_send_id = self.DEFAULT_SENDER_ID
 
-    def send(self, subject, message_text_html, sender=None, sender_id=DEFAULT_SENDER_ID, to=None):
+    def send(self, subject, message_text_html, sender=None, sender_id=DEFAULT_SENDER_ID, to=None, attachment_paths=None):
         """
         Sends an email using Gmail service.
         
@@ -46,18 +48,19 @@ class GmailSender:
             dict: Gmail API response after sending the email.
         """
         service = self.get_gmail_service(subject)
-        message = self.create_message(subject, message_text_html, sender, to)
+        message = self.create_message(subject, message_text_html, sender, to, attachment_paths)
         return self.send_message(service, message, sender_id)
 
-    def create_message(self, subject, message_text_html, sender=None, to=None):
+    def create_message(self, subject, message_text_html, sender=None, to=None, attachment_paths=None):
         """
-        Creates an email message suitable for the Gmail API.
+        Creates an email message suitable for the Gmail API, including attachments.
         
         Args:
             subject (str): Subject of the email.
             message_text_html (str): HTML content of the email.
             sender (str, optional): Email sender address. Defaults to None.
             to (str, optional): Recipient email address. Defaults to None.
+            attachment_paths (list, optional): List of file paths for attachments. Defaults to None.
             
         Returns:
             dict: Message formatted for Gmail API.
@@ -66,8 +69,23 @@ class GmailSender:
         message['to'] = to or self.default_to_email
         message['from'] = sender or self.default_from_email
         message['subject'] = subject
+
+        # Attach the main message body
         msg = MIMEText(message_text_html, 'html')
         message.attach(msg)
+
+        # Attach any files specified
+        if attachment_paths:
+            for file_path in attachment_paths:
+                part = MIMEBase('application', 'octet-stream')
+                with open(file_path, 'rb') as file:
+                    part.set_payload(file.read())
+                encoders.encode_base64(part)
+                part.add_header(
+                    'Content-Disposition',
+                    f'attachment; filename="{os.path.basename(file_path)}"',
+                )
+                message.attach(part)
 
         raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
         body = {'raw': raw_message}
